@@ -1,0 +1,139 @@
+#include <opencv2/opencv.hpp>
+#include <iostream>
+
+using namespace cv;
+using namespace std;
+
+void displayImage(const Mat& image, const string& windowName) {
+    namedWindow(windowName, WINDOW_AUTOSIZE);
+    imshow(windowName, image);
+    waitKey(0); // Wait for a key press to close the window
+}
+
+Mat applyGrayscale(const Mat& image) {
+    Mat grayImage;
+    cvtColor(image, grayImage, COLOR_BGR2GRAY);
+    return grayImage;
+}
+
+Mat applyBlur(const Mat& image, int blurAmount = 5) {
+    Mat blurredImage;
+    GaussianBlur(image, blurredImage, Size(blurAmount, blurAmount), 0);
+    return blurredImage;
+}
+
+Mat applySharpen(const Mat& image) {
+    Mat sharpenedImage;
+    Mat kernel = (Mat_<float>(3, 3) << 
+        0, -1, 0, 
+        -1, 5, -1, 
+        0, -1, 0);
+    filter2D(image, sharpenedImage, -1, kernel);
+    return sharpenedImage;
+}
+
+Mat adjustBrightnessContrast(const Mat& image, double alpha, int beta) {
+    Mat adjustedImage;
+    image.convertTo(adjustedImage, -1, alpha, beta);
+    return adjustedImage;
+}
+
+Mat cropImage(const Mat& image, int x, int y, int width, int height) {
+    Rect region(x, y, width, height);
+    return image(region);
+}
+
+Mat resizeImage(const Mat& image, int width, int height) {
+    Mat resizedImage;
+    resize(image, resizedImage, Size(width, height));
+    return resizedImage;
+}
+
+int main() {
+    string imagePath;
+    cout << "Enter the path to the image: ";
+    cin >> imagePath;
+
+    // Load the image
+    Mat image = imread(imagePath);
+    if (image.empty()) {
+        cerr << "Error: Could not open or find the image!" << endl;
+        return -1;
+    }
+
+    // Display the original image
+    displayImage(image, "Original Image");
+
+    int choice;
+    do {
+        cout << "\nImage Processing Options:\n";
+        cout << "1. Apply Grayscale Filter\n";
+        cout << "2. Apply Blur Filter\n";
+        cout << "3. Apply Sharpen Filter\n";
+        cout << "4. Adjust Brightness and Contrast\n";
+        cout << "5. Crop Image\n";
+        cout << "6. Resize Image\n";
+        cout << "7. Save Processed Image\n";
+        cout << "8. Exit\n";
+        cout << "Enter your choice: ";
+        cin >> choice;
+
+        Mat processedImage = image;
+
+        switch (choice) {
+            case 1:
+                processedImage = applyGrayscale(image);
+                displayImage(processedImage, "Grayscale Image");
+                break;
+            case 2:
+                int blurAmount;
+                cout << "Enter blur amount (odd number): ";
+                cin >> blurAmount;
+                processedImage = applyBlur(image, blurAmount);
+                displayImage(processedImage, "Blurred Image");
+                break;
+            case 3:
+                processedImage = applySharpen(image);
+                displayImage(processedImage, "Sharpened Image");
+                break;
+            case 4:
+                double alpha;
+                int beta;
+                cout << "Enter contrast value (1.0-3.0): ";
+                cin >> alpha;
+                cout << "Enter brightness value (-100 to 100): ";
+                cin >> beta;
+                processedImage = adjustBrightnessContrast(image, alpha, beta);
+                displayImage(processedImage, "Brightness and Contrast Adjusted Image");
+                break;
+            case 5:
+                int x, y, width, height;
+                cout << "Enter crop region (x, y, width, height): ";
+                cin >> x >> y >> width >> height;
+                processedImage = cropImage(image, x, y, width, height);
+                displayImage(processedImage, "Cropped Image");
+                break;
+            case 6:
+                cout << "Enter new width and height: ";
+                cin >> width >> height;
+                processedImage = resizeImage(image, width, height);
+                displayImage(processedImage, "Resized Image");
+                break;
+            case 7:
+                string outputPath;
+                cout << "Enter the output path to save the image: ";
+                cin >> outputPath;
+                imwrite(outputPath, processedImage);
+                cout << "Image saved successfully!\n";
+                break;
+            case 8:
+                cout << "Exiting...\n";
+                break;
+            default:
+                cout << "Invalid choice! Please try again.\n";
+                break;
+        }
+    } while (choice != 8);
+
+    return 0;
+}
